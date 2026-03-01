@@ -7,10 +7,10 @@ const uint row_pins[4] = {10, 15, 14, 12};
 const uint col_pins[3] = {11, 9, 13};
 
 const uint8_t keymap[4][3] = {
-    {HID_KEY_1, HID_KEY_1, HID_KEY_3},
+    {HID_KEY_1, HID_KEY_2, HID_KEY_3},
     {HID_KEY_4, HID_KEY_5, HID_KEY_6},
     {HID_KEY_7, HID_KEY_8, HID_KEY_9},
-    {HID_KEY_KEYPAD_MULTIPLY, HID_KEY_0, HID_KEY_ENTER}
+    {HID_KEY_A, HID_KEY_0, HID_KEY_B}
 };
 
 void matrix_init(void) {
