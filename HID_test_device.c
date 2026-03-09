@@ -26,7 +26,44 @@ void matrix_init(void) {
     }
 }
 
-void matrix_scan(uint8_t *keycode) {
+enum key_bits {
+    KEY_BIT_1 = 1<<0,
+    KEY_BIT_2 = 1<<1,
+    KEY_BIT_3 = 1<<2,
+    KEY_BIT_4 = 1<<3,
+    KEY_BIT_5 = 1<<4,
+    KEY_BIT_6 = 1<<5,
+    KEY_BIT_7 = 1<<6,
+    KEY_BIT_8 = 1<<7,
+    KEY_BIT_9 = 1<<8,
+    KEY_BIT_0 = 1<<9,
+    KEY_BIT_A = 1<<10,
+    KEY_BIT_B = 1<<11,
+};
+
+uint16_t keycode_to_bit(uint8_t keycode) {
+    switch (keycode) {
+        case HID_KEY_1: return KEY_BIT_1;
+        case HID_KEY_2: return KEY_BIT_2;
+        case HID_KEY_3: return KEY_BIT_3;
+        case HID_KEY_4: return KEY_BIT_4;
+        case HID_KEY_5: return KEY_BIT_5;
+        case HID_KEY_6: return KEY_BIT_6;
+        case HID_KEY_7: return KEY_BIT_7;
+        case HID_KEY_8: return KEY_BIT_8;
+        case HID_KEY_9: return KEY_BIT_9;
+        case HID_KEY_0: return KEY_BIT_0;
+        case HID_KEY_A: return KEY_BIT_A;
+        case HID_KEY_B: return KEY_BIT_B;
+    }
+    return 0;
+}
+#define ROLLOVER 1
+#define OK 0
+
+// keycode* is set to 6 keycodes in keycode array, or 1 in all keycodes if rollover
+// returns ROLLOVER if rollover, otherwise OK
+int matrix_scan(uint8_t *keycode) {
     bool pressed[4][3] = {0};
     int total_keys = 0;
 
@@ -79,7 +116,7 @@ void matrix_scan(uint8_t *keycode) {
 
     if (rollover || total_keys > 6) {
         for (int i = 0; i < 6; i++) keycode[i] = 1;
-        return;
+        return ROLLOVER;
     }
 
     int k = 0;
@@ -89,6 +126,7 @@ void matrix_scan(uint8_t *keycode) {
         }
     }
     for (; k < 6; k++) keycode[k] = 0;
+    return OK;
 }
 
 int main(void) {
@@ -97,13 +135,21 @@ int main(void) {
 
     matrix_init();
 
+    uint16_t report=0;
     while (1) {
         tud_task();
         if (tud_hid_ready()) {
-            uint8_t report[8]={0};
-            uint8_t* keycodes = &report[2];
-            matrix_scan(keycodes);
-            tud_hid_report(0,report,8);
+            uint8_t keycodes[8];
+            int result = matrix_scan(keycodes);
+            // only update report if no rollover, otherwise keep sending the previous report
+            if (result != ROLLOVER) {
+                report =0;
+                for (int i = 0; i < 6; i++) {
+                    report |= keycode_to_bit(keycodes[i]);
+                }
+            }
+
+            tud_hid_report(0,&report,2);
         }
     }
 }
